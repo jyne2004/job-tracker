@@ -2,6 +2,8 @@ import { useState, useEffect } from "react"
 import "./App.css"
 
 function App() {
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({})
   const [jobs, setJobs] = useState([])
   const [form, setForm] = useState({
     company: "",
@@ -34,6 +36,23 @@ function App() {
       })
   }
 
+  const deleteJob = (id) => {
+    fetch(`http://localhost:8000/jobs/${id}`, {
+      method: "DELETE"
+    }).then(() => fetchJobs())
+  }
+
+  const updateJob = (id) => {
+    fetch(`http://localhost:8000/jobs/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm)
+    }).then(() => {
+      fetchJobs()
+      setEditingId(null)
+    })
+  }
+
   return (
     <div className="container">
       <h1>Job Tracker</h1>
@@ -58,17 +77,52 @@ function App() {
         <button onClick={handleSubmit}>Add Job</button>
       </div>
 
-      {jobs.map(job => (
-        <div key={job.id} className="job-card">
+  {jobs.map(job => (
+    <div key={job.id} className="job-card">
+      {editingId === job.id ? (
+        <div className="edit-form">
+          <input value={editForm.company}
+            onChange={e => setEditForm({...editForm, company: e.target.value})} />
+          <input value={editForm.role}
+            onChange={e => setEditForm({...editForm, role: e.target.value})} />
+          <select value={editForm.status}
+            onChange={e => setEditForm({...editForm, status: e.target.value})}>
+            <option value="applied">Applied</option>
+            <option value="interview">Interview</option>
+            <option value="offer">Offer</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <div style={{display: "flex", gap: "8px"}}>
+            <button className="save-btn" onClick={() => updateJob(job.id)}>Save</button>
+            <button className="cancel-btn" onClick={() => setEditingId(null)}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <>
           <div className="job-info">
             <h2>{job.company}</h2>
             <p>{job.role}</p>
           </div>
-          <span className={`status-badge status-${job.status}`}>
-            {job.status}
-          </span>
-        </div>
-      ))}
+          <div style={{display: "flex", gap: "8px", alignItems: "center"}}>
+            <span className={`status-badge status-${job.status}`}>
+              {job.status}
+            </span>
+            <button className="edit-btn" onClick={() => {
+              setEditingId(job.id)
+              setEditForm({
+                company: job.company,
+                role: job.role,
+                status: job.status,
+                date_applied: job.date_applied,
+                notes: job.notes
+              })
+            }}>Edit</button>
+            <button className="delete-btn" onClick={() => deleteJob(job.id)}>Delete</button>
+          </div>
+        </>
+      )}
+    </div>
+  ))}
     </div>
   )
 }
