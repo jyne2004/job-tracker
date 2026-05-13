@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import "./App.css";
+import Login from "./Login";
 import toast, { Toaster } from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
@@ -16,16 +17,30 @@ function App() {
   });
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
+  const [darkMode, setDarkMode] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
 
   useEffect(() => {
     fetchJobs();
   }, []);
 
-  const fetchJobs = () => {
-    fetch("http://localhost:8000/jobs")
-      .then((res) => res.json())
-      .then((data) => setJobs(data));
+  useEffect(() => {
+    document.body.className = darkMode ? "dark" : "";
+  }, [darkMode]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
   };
+
+  const fetchJobs = () => {
+    fetch("http://localhost:8000/jobs", {
+      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+    })
+      .then((res) => res.json())
+      .then((data) => setJobs(data))
+  }
 
   const handleSubmit = () => {
     if (!form.company || !form.role) {
@@ -34,7 +49,10 @@ function App() {
     }
     fetch("http://localhost:8000/jobs", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
       body: JSON.stringify(form),
     })
       .then((res) => res.json())
@@ -54,6 +72,9 @@ function App() {
   const deleteJob = (id) => {
     fetch(`http://localhost:8000/jobs/${id}`, {
       method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      }
     }).then(() => {
       fetchJobs();
       toast.success("Job deleted!");
@@ -63,7 +84,10 @@ function App() {
   const updateJob = (id) => {
     fetch(`http://localhost:8000/jobs/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
       body: JSON.stringify(editForm),
     }).then(() => {
       fetchJobs();
@@ -80,25 +104,51 @@ function App() {
     rejected: jobs.filter((j) => j.status === "rejected").length,
   };
 
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch =
-      job.company.toLowerCase().includes(search.toLowerCase()) ||
-      job.role.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === "all" || job.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredJobs = jobs
+    .filter((job) => {
+      const matchesSearch =
+        job.company.toLowerCase().includes(search.toLowerCase()) ||
+        job.role.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus =
+        filterStatus === "all" || job.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "newest") {
+        return new Date(b.date_applied) - new Date(a.date_applied);
+      } else {
+        return new Date(a.date_applied) - new Date(b.date_applied);
+      }
+    });
 
   const chartData = [
     { name: "Applied", value: stats.applied, color: "#3b82f6" },
     { name: "Interview", value: stats.interview, color: "#f59e0b" },
     { name: "Offer", value: stats.offer, color: "#22c55e" },
     { name: "Rejected", value: stats.rejected, color: "#ef4444" },
-  ].filter(d => d.value > 0)
+  ].filter((d) => d.value > 0);
+
+  if (!isLoggedIn) {
+    return <Login onLogin={() => setIsLoggedIn(true)} />;
+  }
 
   return (
     <div className="container">
       <Toaster position="top-right" />
       <h1>Job Tracker</h1>
+      <div className="header">
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button
+            className="dark-toggle"
+            onClick={() => setDarkMode(!darkMode)}
+          >
+            {darkMode ? "☀️ Light" : "🌙 Dark"}
+          </button>
+          <button className="dark-toggle" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </div>
 
       <div className="stats-bar">
         <div className="stat-card">
@@ -146,6 +196,13 @@ function App() {
           <option value="interview">Interview</option>
           <option value="offer">Offer</option>
           <option value="rejected">Rejected</option>
+        </select>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+        >
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
         </select>
       </div>
 
