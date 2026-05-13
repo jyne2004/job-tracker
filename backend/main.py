@@ -11,8 +11,9 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 app.add_middleware(
+app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://job-tracker-pi-eight.vercel.app", "https://job-tracker-1can8x2lo-jyne2004s-projects.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
