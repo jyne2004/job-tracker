@@ -3,7 +3,9 @@ import "./App.css";
 import Login from "./Login";
 import toast, { Toaster } from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-
+ 
+const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+ 
 function App() {
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -20,38 +22,41 @@ function App() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [darkMode, setDarkMode] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-
+ 
   useEffect(() => {
-    fetchJobs();
+    if (isLoggedIn) {
+      fetchJobs();
+    }
   }, []);
 
+ 
   useEffect(() => {
     document.body.className = darkMode ? "dark" : "";
   }, [darkMode]);
-
+ 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
   };
-
+ 
   const fetchJobs = () => {
-    fetch("http://localhost:8000/jobs", {
-      headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+    fetch(`${API}/jobs`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then((res) => res.json())
-      .then((data) => setJobs(data))
-  }
-
+      .then((data) => setJobs(data));
+  };
+ 
   const handleSubmit = () => {
     if (!form.company || !form.role) {
       toast.error("Company and role are required!");
       return;
     }
-    fetch("http://localhost:8000/jobs", {
+    fetch(`${API}/jobs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(form),
     })
@@ -68,25 +73,25 @@ function App() {
         toast.success("Job added!");
       });
   };
-
+ 
   const deleteJob = (id) => {
-    fetch(`http://localhost:8000/jobs/${id}`, {
+    fetch(`${API}/jobs/${id}`, {
       method: "DELETE",
       headers: {
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      }
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     }).then(() => {
       fetchJobs();
       toast.success("Job deleted!");
     });
   };
-
+ 
   const updateJob = (id) => {
-    fetch(`http://localhost:8000/jobs/${id}`, {
+    fetch(`${API}/jobs/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
       body: JSON.stringify(editForm),
     }).then(() => {
@@ -95,7 +100,7 @@ function App() {
       toast.success("Job updated!");
     });
   };
-
+ 
   const stats = {
     total: jobs.length,
     applied: jobs.filter((j) => j.status === "applied").length,
@@ -103,7 +108,7 @@ function App() {
     offer: jobs.filter((j) => j.status === "offer").length,
     rejected: jobs.filter((j) => j.status === "rejected").length,
   };
-
+ 
   const filteredJobs = jobs
     .filter((job) => {
       const matchesSearch =
@@ -120,23 +125,23 @@ function App() {
         return new Date(a.date_applied) - new Date(b.date_applied);
       }
     });
-
+ 
   const chartData = [
     { name: "Applied", value: stats.applied, color: "#3b82f6" },
     { name: "Interview", value: stats.interview, color: "#f59e0b" },
     { name: "Offer", value: stats.offer, color: "#22c55e" },
     { name: "Rejected", value: stats.rejected, color: "#ef4444" },
   ].filter((d) => d.value > 0);
-
+ 
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
   }
-
+ 
   return (
     <div className="container">
       <Toaster position="top-right" />
-      <h1>Job Tracker</h1>
       <div className="header">
+        <h1>Job Tracker</h1>
         <div style={{ display: "flex", gap: "8px" }}>
           <button
             className="dark-toggle"
@@ -149,7 +154,7 @@ function App() {
           </button>
         </div>
       </div>
-
+ 
       <div className="stats-bar">
         <div className="stat-card">
           <span className="stat-number">{stats.total}</span>
@@ -180,7 +185,7 @@ function App() {
           <span className="stat-label">Rejected</span>
         </div>
       </div>
-
+ 
       <div className="search-bar">
         <input
           placeholder="Search by company or role..."
@@ -205,7 +210,7 @@ function App() {
           <option value="oldest">Oldest First</option>
         </select>
       </div>
-
+ 
       {jobs.length > 0 && (
         <div className="chart-card">
           <h2>Applications Overview</h2>
@@ -226,7 +231,7 @@ function App() {
           </PieChart>
         </div>
       )}
-
+ 
       <div className="form-card">
         <h2>Add Application</h2>
         <input
@@ -260,13 +265,13 @@ function App() {
         />
         <button onClick={handleSubmit}>Add Job</button>
       </div>
-
+ 
       {filteredJobs.length === 0 && (
         <div className="empty-state">
           <p>No jobs found. Add your first application above!</p>
         </div>
       )}
-
+ 
       {filteredJobs.map((job) => (
         <div key={job.id} className="job-card">
           {editingId === job.id ? (
@@ -347,5 +352,6 @@ function App() {
     </div>
   );
 }
-
+ 
 export default App;
+ 
