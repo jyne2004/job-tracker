@@ -17,7 +17,8 @@
 **Deployment:** Vercel (frontend) + Render (backend)
 
 ## Screenshots
-*(Add screenshots here)*
+![Job Tracker](screenshot.png)
+
 
 ## Running Locally
 
