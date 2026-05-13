@@ -8,7 +8,7 @@ function Login({ onLogin }) {
 
   const handleSubmit = async () => {
     if (isRegister) {
-      const res = await fetch("http://localhost:8000/register", {
+    const res = await fetch("https://job-tracker-backend-tx0d.onrender.com/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -23,7 +23,7 @@ function Login({ onLogin }) {
       const formData = new URLSearchParams()
       formData.append("username", email)
       formData.append("password", password)
-      const res = await fetch("http://localhost:8000/login", {
+      const res = await fetch("https://job-tracker-backend-tx0d.onrender.com/login", {
         method: "POST",
         body: formData
       })

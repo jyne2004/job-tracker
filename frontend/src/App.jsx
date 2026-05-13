@@ -4,7 +4,7 @@ import Login from "./Login";
 import toast, { Toaster } from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
  
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = "https://job-tracker-backend-tx0d.onrender.com";
  
 function App() {
   const [editingId, setEditingId] = useState(null);
